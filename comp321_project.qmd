@@ -1,0 +1,181 @@
+---
+title: "Ticket to Ride Simulation"
+format: pdf
+editor: visual
+---
+
+### Sydney Barber, Jack Dumanski, Tess Petrucci
+
+rulebook: <https://cdn.svc.asmodee.net/production-daysofwonder/uploads/2025/07/7201N_TICKET2RIDEV2_RULES_EN_20250425_WEB.pdf>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+#knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+```{r, packages}
+library(tidyverse)
+library(igraph)
+library(ggraph)
+library(tidygraph)
+```
+
+What’s in the box
+
+-   1 game board
+-   225 plastic trains in 5 colors (45 each color)
+-   110 train cards (12 in 8 colors and 14 wild card)
+-   33 tickets
+-   1 longest path bonus card
+-   5 wooden scoring markers
+-   1 rules booklet
+
+# set up
+
+-   2 players
+
+### routes
+
+```{r, routes}
+routes <- tribble(
+  ~from, ~to, ~length, ~color,
+  "Seattle", "Portland", 1, "grey",
+  "Seattle", "Portland", 1, "grey",
+  "Seattle", "Helena", 6, "yellow",
+  "Seattle", "Calgary", 4, "grey",
+  "Portland", "San Francisco", 5, "green",
+  "Portland", "Salt Lake City", 6, "blue",
+  "San Francisco", "Salt Lake City", 5, "orange",
+  "San Francisco", "Los Angeles", 3, "pink",
+  "Los Angeles", "Las Vegas", 2, "grey",
+  "Los Angeles", "Phoenix", 3, "grey",
+  "Los Angeles", "El Paso", 6, "black",
+  "Las Vegas", "Salt Lake City", 3, "orange",
+  "Salt Lake City", "Helena", 3, "pink",
+  "Salt Lake City", "Denver", 3, "red",
+  "Salt Lake City", "Phoenix", 3, "grey",
+  "Phoenix", "Denver", 5, "white",
+  "Phoenix", "Santa Fe", 3, "grey",
+  "Phoenix", "El Paso", 3, "grey",
+  "Denver", "Helena", 4, "green",
+  "Denver", "Omaha", 4, "pink",
+  "Denver", "Kansas City", 4, "black",
+  "Denver", "Oklahoma City", 4, "red",
+  "Denver", "Santa Fe", 2, "grey",
+  "Santa Fe", "Oklahoma City", 3, "blue",
+  "Santa Fe", "El Paso", 2, "grey",
+  "El Paso", "Dallas", 4, "red",
+  "El Paso", "Houston", 6, "green",
+  "Dallas", "Oklahoma City", 2, "grey",
+  "Dallas", "Little Rock", 2, "grey",
+  "Dallas", "Houston", 1, "grey",
+  "Oklahoma City", "Kansas City", 2, "grey",
+  "Oklahoma City", "Little Rock", 2, "grey",
+  "Kansas City", "Omaha", 1, "grey",
+  "Kansas City", "Saint Louis", 2, "blue",
+  "Omaha", "Chicago", 4, "blue",
+  "Chicago", "Saint Louis", 2, "green",
+  "Chicago", "Pittsburgh", 3, "orange",
+  "Chicago", "Toronto", 4, "white",
+  "Saint Louis", "Pittsburgh", 5, "green",
+  "Saint Louis", "Nashville", 2, "grey",
+  "Saint Louis", "Little Rock", 2, "grey",
+  "Little Rock", "Nashville", 3, "white",
+  "Little Rock", "New Orleans", 3, "green",
+  "Houston", "New Orleans", 2, "grey",
+  "Nashville", "Atlanta", 1, "grey",
+  "Nashville", "Raleigh", 3, "black",
+  "Atlanta", "Charleston", 2, "grey",
+  "Atlanta", "Raleigh", 2, "grey",
+  "Atlanta", "Miami", 5, "blue",
+  "New Orleans", "Miami", 6, "red",
+  "New Orleans", "Atlanta", 4, "yellow",
+  "Charleston", "Miami", 4, "pink",
+  "Raleigh", "Washington", 2, "grey",
+  "Raleigh", "Pittsburgh", 2, "grey",
+  "Pittsburgh", "New York", 2, "white",
+  "Pittsburgh", "Washington", 2, "grey",
+  "Washington", "New York", 2, "black",
+  "New York", "Boston", 2, "red",
+  "New York", "Boston", 2, "blue",
+  "New York", "Montreal", 3, "blue",
+  "Toronto", "Montreal", 3, "grey",
+  "Montreal", "Boston", 2, "grey",
+  "Montreal", "Sault Ste. Marie", 5, "black",
+  "Helena", "Calgary", 4, "grey",
+  "Helena", "Winnipeg", 4, "blue",
+  "Helena", "Duluth", 6, "orange",
+  "Helena", "Omaha", 5, "red",
+  "Calgary", "Winnipeg", 6, "white",
+  "Winnipeg", "Sault Ste. Marie", 6, "grey",
+  "Winnipeg", "Duluth", 4, "black",
+  "Duluth", "Sault Ste. Marie", 3, "grey",
+  "Duluth", "Omaha", 2, "grey",
+  "Duluth", "Chicago", 3, "red"
+)
+```
+
+### playing cards
+
+```{r, cards}
+####### train car pieces
+# total = 225
+train_cars <- list(
+  list(1:45, "red"),
+  list(1:45, "green"),
+  list(1:45, "blue"),
+  list(1:45, "yellow"),
+  list(1:45, "black")
+)
+
+####### train cards
+# total = 110
+
+train_cards <- list(
+  list(1:8, "pink"), 
+  list(1:8, "red"), 
+  list(1:8, "orange"), 
+  list(1:8, "yellow"), 
+  list(1:8, "green"), 
+  list(1:8, "blue"), 
+  list(1:8, "black"), 
+  list(1:8, "white"), 
+  list(1:14, "wild")
+)
+
+```
+
+### visualization graph
+
+```{r, network}
+
+network <- graph_from_data_frame(
+  d = routes,
+  directed = FALSE
+)
+
+ggraph(network, layout = "fr") +
+  geom_edge_link(
+    aes(
+      width = length,
+      color = color
+    ),
+    alpha = 0.8
+  ) +
+  geom_node_point(
+    size = 4,
+    color = "black"
+  ) +
+  geom_node_text(
+    aes(label = name),
+    repel = TRUE,
+    size = 3
+  ) +
+  scale_edge_color_identity() +
+  scale_edge_width(range = c(0.5, 3)) +
+  theme_void() +
+  labs(
+    title = "Ticket to Ride: USA Route Network",
+    edge_width = "Route Length"
+  )
+```
