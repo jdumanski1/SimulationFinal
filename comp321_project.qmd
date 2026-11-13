@@ -22,17 +22,17 @@ library(tidygraph)
 
 What’s in the box
 
--   1 game board
--   225 plastic trains in 5 colors (45 each color)
--   110 train cards (12 in 8 colors and 14 wild card)
--   33 tickets
--   1 longest path bonus card
--   5 wooden scoring markers
--   1 rules booklet
+- 1 game board
+- 225 plastic trains in 5 colors (45 each color)
+- 110 train cards (12 in 8 colors and 14 wild card)
+- 33 tickets
+- 1 longest path bonus card
+- 5 wooden scoring markers
+- 1 rules booklet
 
 # set up
 
--   2 players
+- 2 players
 
 ### routes
 
@@ -261,3 +261,5 @@ ggraph(network, layout = "fr") +
     edge_width = "Route Length"
   )
 ```
+
+# Take a turn
