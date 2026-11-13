@@ -143,6 +143,88 @@ train_cards <- list(
   list(1:14, "wild")
 )
 
+
+##### route cards
+
+
+destination_tickets <- data.frame(
+  ticket_id = 1:30,
+
+  from = c(
+    "Boston",
+    "Calgary",
+    "Calgary",
+    "Chicago",
+    "Chicago",
+    "Dallas",
+    "Denver",
+    "Denver",
+    "Duluth",
+    "Duluth",
+    "Helena",
+    "Kansas City",
+    "Los Angeles",
+    "Los Angeles",
+    "Los Angeles",
+    "Montreal",
+    "Montreal",
+    "New York",
+    "Portland",
+    "Portland",
+    "San Francisco",
+    "Sault Ste Marie",
+    "Sault Ste Marie",
+    "Seattle",
+    "Seattle",
+    "Toronto",
+    "Vancouver",
+    "Vancouver",
+    "Winnipeg",
+    "Winnipeg"
+  ),
+
+  to = c(
+    "Miami",
+    "Phoenix",
+    "Salt Lake City",
+    "New Orleans",
+    "Santa Fe",
+    "New York",
+    "El Paso",
+    "Pittsburgh",
+    "El Paso",
+    "Houston",
+    "Los Angeles",
+    "Houston",
+    "Chicago",
+    "Miami",
+    "New York",
+    "Atlanta",
+    "New Orleans",
+    "Atlanta",
+    "Nashville",
+    "Phoenix",
+    "Atlanta",
+    "Nashville",
+    "Oklahoma City",
+    "Los Angeles",
+    "New York",
+    "Miami",
+    "Montreal",
+    "Santa Fe",
+    "Houston",
+    "Little Rock"
+  ),
+
+  points = c(
+    12, 13, 7, 7, 9, 11, 4, 11, 10, 8,
+    8, 5, 16, 20, 21, 9, 13, 6, 17, 11,
+    17, 8, 9, 9, 22, 10, 20, 13, 12, 11
+  )
+)
+
+
+
 ```
 
 ### visualization graph
