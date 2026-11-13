@@ -145,7 +145,7 @@ train_cards <- list(
 
 
 ##### route cards
-
+#nothing
 
 destination_tickets <- data.frame(
   ticket_id = 1:30,
