@@ -25,6 +25,10 @@ words <- scan("./words.txt", what = character(), sep = ",", quote = "\"")
 
 ## simulating one guess
 
+- need to sample from the words that meet those conditions
+- or go for consonants vowels???
+- use letters we already used
+
 ```{r, wordle_game1}
 random <- sample(words, 2, replace = FALSE)
 answer <- str_split(random[1], pattern="") #answer
@@ -48,12 +52,68 @@ for (i in 1:5) {
   } else {
     reveal[i] = "grey"
   }
+  
 }
 
 reveal
 
-# need to sample from the words that meet those conditions
-# or go for consonants vowels???
-# use letters we already used
+##### guess 2 - from chatgpt
+
+# Start with all possible words
+possible_words <- words
+
+for (i in 1:5) {
+
+  if (reveal[i] == "green") {
+
+    # Green: letter must be in the same position
+    possible_words <- possible_words[
+      substr(possible_words, i, i) == guess[[1]][i]
+    ]
+
+  } else if (reveal[i] == "yellow") {
+
+    # Yellow: letter must be in the word, but not this position
+    possible_words <- possible_words[
+      grepl(guess[[1]][i], possible_words) &
+      substr(possible_words, i, i) != guess[[1]][i]
+    ]
+
+  } else {
+
+    # Grey: letter cannot be in the word
+    possible_words <- possible_words[
+      !grepl(guess[[1]][i], possible_words)
+    ]
+
+  }
+}
+
+# Randomly select a possible second guess
+guess2 <- sample(possible_words, 1)
+
+guess2
+
+
+##### check guess 2
+
+guess2 <- str_split(guess2, pattern = "")[[1]]
+
+reveal2 <- c()
+
+for (i in 1:5) {
+  
+  if (guess2[i] == answer[[1]][i]) {
+    reveal2[i] <- "green"
+  } else if (guess2[i] %in% answer[[1]]) {
+    reveal2[i] <- "yellow"
+  } else {
+    reveal2[i] <- "grey"
+  }
+  
+}
+
+reveal2
+
 
 ```
