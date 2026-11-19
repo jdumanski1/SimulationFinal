@@ -138,3 +138,43 @@ absolute_randomness <- function(){
 nsim <- 10000
 (sum(replicate(nsim, absolute_randomness())) / nsim)
 ```
+
+# Second Strategy: Randomly selecting from possible words 
+
+If we remove the grayed out letters from each incorrect guess:
+
+```{r}
+answer <- str_split(random[1], pattern="") #answer
+answer
+guess <- str_split(random[2], pattern="") #first guess
+guess
+
+alphabet <- letters
+  
+for (i in 1:5) {
+  # check and place green
+  if (guess[[1]][i] == answer[[1]][i]){
+    reveal[i] = "green" 
+  } else if (guess[[1]][i] %in% answer[[1]] & guess[[1]][i] != answer[[1]][i]) {
+    reveal[i] = "yellow"
+  } else {
+    reveal[i] = "grey"
+  }
+}
+
+reveal
+guess[[1]][1]
+
+#remove invalid letters from alphabet 
+
+for (i in 1:length(reveal)){
+  if (reveal[i] == "grey"){
+    alphabet <- alphabet[alphabet != guess[[1]][i]]
+  }
+}
+length(alphabet)
+
+
+```
+
+#  
