@@ -176,20 +176,22 @@ length(alphabet)
 
 # remove words that include these letters (keep words that only include letters in the new alphabet)
 
-possible_words <- words
+possible_words <- c()
 
 for (i in 1:length(words)){
-  word_letters <- strsplit(as.character(words[i]), "")[[1]]
+  word_letters <- str_split(as.character(words[i]), "")[[1]]
 
-  if (!is.na(words[i]) && all(word_letters %in% alphabet)) {
+  if (all(word_letters %in% alphabet)) {
     possible_words <- c(possible_words, words[i])
   }
 }
 
-head(possible_words)
+word_letters[1:10]
+str_split(as.character(words[1]), pattern = "")
 
 guess2 <- sample(possible_words, 1) #second guess
 guess2
+
 
 
 ```
