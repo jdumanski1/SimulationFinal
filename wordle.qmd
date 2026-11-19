@@ -16,7 +16,6 @@ library(tidyverse)
 library(stringr)
 ```
 
-
 ## list of words
 
 ```{r, words}
@@ -116,4 +115,26 @@ for (i in 1:5) {
 reveal2
 
 
+```
+
+# First Strategy: Complete Randomness
+
+Out of all legal words, how often do you win by making guesses that have no influence on other guesses?
+
+```{r}
+absolute_randomness <- function(){
+  guesses <- c()
+  answer_random <- sample(words, 1)
+  for (i in 1:6){
+    guesses[i] <- sample(words, 1)
+  }
+  if (any(guesses == answer_random)){
+    return(TRUE)
+  }
+  else{
+  return(FALSE)
+  }
+}
+nsim <- 10000
+(sum(replicate(nsim, absolute_randomness())) / nsim)
 ```
