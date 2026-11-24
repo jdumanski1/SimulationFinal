@@ -141,7 +141,7 @@ nsim <- 10000
 guesses
 ```
 
-# Second Strategy: Randomly selecting from possible words 
+# Second Strategy: Randomly selecting from possible words
 
 If we remove the grayed out letters from each incorrect guess:
 
@@ -198,4 +198,231 @@ guess2
 
 ```
 
-#  
+# 
+
+```{r}
+
+library(stringr)
+
+# Setup target word and first guess
+target_word <- random[1]
+first_guess <- random[2]
+
+cat("Target Answer", target_word, "\n\n")
+
+target_letters <- str_split(target_word, pattern = "")[[1]]
+guess_letters <- str_split(first_guess, pattern = "")[[1]]
+
+# Track valid letters and position feedback
+valid_letters <- letters
+feedback <- character(5)
+
+# 1. Evaluate the first guess (Green, Yellow, Grey)
+for (i in 1:5) {
+  if (guess_letters[i] == target_letters[i]) {
+    feedback[i] <- "green"
+  } else if (guess_letters[i] %in% target_letters) {
+    feedback[i] <- "yellow"
+  } else {
+    feedback[i] <- "grey"
+  }
+}
+
+  cat("Guess 1:", first_guess, "\n")
+  cat("Colors: ", paste(feedback, collapse = " "), "\n\n")
+
+# 2. Remove grey letters from valid_letters
+for (i in 1:5) {
+  if (feedback[i] == "grey") {
+    valid_letters <- valid_letters[valid_letters != guess_letters[i]]
+  }
+}
+
+# Identify all letters marked yellow so we make sure to keep using them
+yellow_letters <- guess_letters[feedback == "yellow"]
+
+# 3. Filter the word list for valid second guesses
+remaining_words <- c()
+
+for (word in words) {
+  candidate_letters <- str_split(as.character(word), pattern = "")[[1]]
+  
+  # Rule A: Word must only contain valid (non-grey) letters
+  uses_valid_letters <- all(candidate_letters %in% valid_letters)
+  
+  # Rule B: Word must include all discovered yellow letters
+  includes_yellows <- all(yellow_letters %in% candidate_letters)
+  
+  # Rule C: Yellow letters cannot be in the exact same spot as before
+  yellow_spot_clash <- FALSE
+  for (i in 1:5) {
+    if (feedback[i] == "yellow" && candidate_letters[i] == guess_letters[i]) {
+      yellow_spot_clash <- TRUE
+      break
+    }
+  }
+  # Rule D: Green letters MUST stay locked in their exact spot
+  green_spot_mismatch <- FALSE
+  for (i in 1:5) {
+    if (feedback[i] == "green" && candidate_letters[i] != guess_letters[i]) {
+      green_spot_mismatch <- TRUE
+      break
+    }
+  }
+  
+  # Keep the word only if it passes all rules
+  if (uses_valid_letters && includes_yellows && !yellow_spot_clash) {
+    remaining_words <- c(remaining_words, word)
+  }
+}
+
+# 4. Pick the second guess
+second_guess <- sample(remaining_words, 1)
+second_guess_letters <- str_split(second_guess, pattern = "")[[1]]
+feedback_2 <- character(5)
+
+for (i in 1:5) {
+  if (second_guess_letters[i] == target_letters[i]) {
+    feedback_2[i] <- "green"
+  } else if (second_guess_letters[i] %in% target_letters) {
+    feedback_2[i] <- "yellow"
+  } else {
+    feedback_2[i] <- "grey"
+  }
+}
+
+#Print guess 2 and its colors
+cat("Guess 2:", second_guess, "\n")
+cat("Colors: ", paste(feedback_2, collapse = " "), "\n")
+```
+
+```{r}
+library(stringr)
+
+simulate_wordle <- function(words, target_word = NULL, first_guess = NULL, max_guesses = 6, verbose = TRUE) {
+  # Ensure words are clean lowercase character strings
+  words <- tolower(as.character(words))
+  
+  # Pick random target and first guess if not provided
+  if (is.null(target_word)) target_word <- sample(words, 1)
+  if (is.null(first_guess)) first_guess <- sample(words, 1)
+  
+  target_letters <- str_split(target_word, pattern = "")[[1]]
+  valid_letters <- letters
+  remaining_words <- words
+  
+  if (verbose) {
+    cat("Target Answer:", target_word, "\n\n")
+  }
+  
+  current_guess <- first_guess
+  guess_history <- character()
+  
+  for (turn in 1:max_guesses) {
+    guess_letters <- str_split(current_guess, pattern = "")[[1]]
+    feedback <- character(5)
+    
+    # 1. Evaluate the current guess (Green, Yellow, Grey)
+    for (i in 1:5) {
+      if (guess_letters[i] == target_letters[i]) {
+        feedback[i] <- "green"
+      } else if (guess_letters[i] %in% target_letters) {
+        feedback[i] <- "yellow"
+      } else {
+        feedback[i] <- "grey"
+      }
+    }
+    
+    guess_history <- c(guess_history, current_guess)
+    
+    if (verbose) {
+      cat("Guess", turn, ":", current_guess, "\n")
+      cat("Colors: ", paste(feedback, collapse = " "), "\n\n")
+    }
+    
+    # Stop early if all 5 letters are green
+    if (all(feedback == "green")) {
+      if (verbose) cat("Solved in", turn, "guesses!\n")
+      return(list(
+        target = target_word,
+        solved = TRUE,
+        num_guesses = turn,
+        guesses = guess_history
+      ))
+    }
+    
+    # 2. Update valid letters (only remove grey if it's not green/yellow elsewhere in the guess)
+    active_letters <- guess_letters[feedback %in% c("green", "yellow")]
+    for (i in 1:5) {
+      if (feedback[i] == "grey" && !(guess_letters[i] %in% active_letters)) {
+        valid_letters <- valid_letters[valid_letters != guess_letters[i]]
+      }
+    }
+    
+    yellow_letters <- guess_letters[feedback == "yellow"]
+    
+    # 3. Filter remaining_words for the next turn
+    next_remaining <- c()
+    
+    for (word in remaining_words) {
+      # Don't re-guess the exact word we just tried
+      if (word == current_guess) next
+      
+      candidate_letters <- str_split(word, pattern = "")[[1]]
+      
+      # Rule A: Only valid (non-grey) letters
+      uses_valid_letters <- all(candidate_letters %in% valid_letters)
+      
+      # Rule B: Includes all discovered yellow letters
+      includes_yellows <- all(yellow_letters %in% candidate_letters)
+      
+      # Rule C: Yellow letters cannot be in the same spot
+      yellow_spot_clash <- FALSE
+      for (i in 1:5) {
+        if (feedback[i] == "yellow" && candidate_letters[i] == guess_letters[i]) {
+          yellow_spot_clash <- TRUE
+          break
+        }
+      }
+      
+      # Rule D: Green letters stay locked in place
+      green_spot_mismatch <- FALSE
+      for (i in 1:5) {
+        if (feedback[i] == "green" && candidate_letters[i] != guess_letters[i]) {
+          green_spot_mismatch <- TRUE
+          break
+        }
+      }
+      
+      if (uses_valid_letters && includes_yellows && !yellow_spot_clash && !green_spot_mismatch) {
+        next_remaining <- c(next_remaining, word)
+      }
+    }
+    
+    remaining_words <- next_remaining
+    
+    # Safety check in case no valid words remain
+    if (length(remaining_words) == 0) break
+    
+    # 4. Pick the next guess (handle single-element vector safely in sample())
+    if (length(remaining_words) == 1) {
+      current_guess <- remaining_words[1]
+    } else {
+      current_guess <- sample(remaining_words, 1)
+    }
+  }
+  
+  if (verbose) cat("Failed to solve within", max_guesses, "guesses.\n")
+  
+  return(list(
+    target = target_word,
+    solved = FALSE,
+    num_guesses = NA,
+    guesses = guess_history
+  ))
+}
+
+simulate_wordle(words, verbose = TRUE)
+```
+
+\
