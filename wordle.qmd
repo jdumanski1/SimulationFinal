@@ -145,60 +145,7 @@ guesses
 
 If we remove the grayed out letters from each incorrect guess:
 
-```{r}
-answer <- str_split(random[1], pattern="")[[1]] #answer
-answer
-guess <- str_split(random[2], pattern="")[[1]] #first guess
-guess
-
-alphabet <- letters
-  
-for (i in 1:5) {
-  # check and place green
-  if (guess[i] == answer[i]){
-    reveal[i] = "green" 
-  } else if (guess[i] %in% answer & guess[i] != answer[i]) {
-    reveal[i] = "yellow"
-  } else {
-    reveal[i] = "grey"
-  }
-}
-
-reveal
-#guess[[1]][1]
-
-#remove invalid letters from alphabet 
-
-for (i in 1:length(reveal)){
-  if (reveal[i] == "grey"){
-    alphabet <- alphabet[alphabet != guess[[1]][i]]
-  }
-}
-length(alphabet)
-
-# remove words that include these letters (keep words that only include letters in the new alphabet)
-
-possible_words <- c()
-
-for (i in 1:length(words)){
-  word_letters <- str_split(as.character(words[i]), "")[[1]]
-
-  if (all(word_letters %in% alphabet)) {
-    possible_words <- c(possible_words, words[i])
-  }
-}
-
-word_letters[1:10]
-str_split(as.character(words[1]), pattern = "")
-
-guess2 <- sample(possible_words, 1) #second guess
-guess2
-
-
-
-```
-
-# 
+## one guess of the game
 
 ```{r}
 
@@ -298,6 +245,9 @@ cat("Colors: ", paste(feedback_2, collapse = " "), "\n")
 
 ```{r}
 library(stringr)
+
+
+# DONT SIMULATE THIS ONE 
 
 simulate_wordle <- function(words, target_word = NULL, first_guess = NULL, max_guesses = 6, verbose = TRUE) {
   # Ensure words are clean lowercase character strings
@@ -423,6 +373,198 @@ simulate_wordle <- function(words, target_word = NULL, first_guess = NULL, max_g
 }
 
 simulate_wordle(words, verbose = TRUE)
+
+nsmims <- 1000
+(sum(replicate(nsim, simulate_wordle(words = words))) / nsim)
 ```
 
-\
+
+## simulate of game
+
+```{r}
+simulate_wordle <- function(words, target_word = NULL, first_guess = NULL, max_guesses = 6, verbose = TRUE) {
+  # Ensure words are clean lowercase character strings
+  words <- tolower(as.character(words))
+  
+  # Pick random target and first guess if not provided
+  if (is.null(target_word)) target_word <- sample(words, 1)
+  if (is.null(first_guess)) first_guess <- sample(words, 1)
+  
+  target_letters <- str_split(target_word, pattern = "")[[1]]
+  valid_letters <- letters
+  remaining_words <- words
+  
+  if (verbose) {
+    cat("Target Answer:", target_word, "\n\n")
+  }
+  
+  current_guess <- first_guess
+  guess_history <- character()
+  
+  for (turn in 1:max_guesses) {
+    guess_letters <- str_split(current_guess, pattern = "")[[1]]
+    feedback <- character(5)
+    
+    # 1. Evaluate the current guess (Green, Yellow, Grey)
+    for (i in 1:5) {
+      if (guess_letters[i] == target_letters[i]) {
+        feedback[i] <- "green"
+      } else if (guess_letters[i] %in% target_letters) {
+        feedback[i] <- "yellow"
+      } else {
+        feedback[i] <- "grey"
+      }
+    }
+    
+    guess_history <- c(guess_history, current_guess)
+    
+    if (verbose) {
+      cat("Guess", turn, ":", current_guess, "\n")
+      cat("Colors: ", paste(feedback, collapse = " "), "\n\n")
+    }
+    
+    # Stop early if all 5 letters are green
+    if (all(feedback == "green")) {
+      if (verbose) cat("Solved in", turn, "guesses!\n")
+      return(list(
+        target = target_word,
+        solved = TRUE,
+        num_guesses = turn,
+        guesses = guess_history
+      ))
+    }
+    
+    # 2. Update valid letters (only remove grey if it's not green/yellow elsewhere in the guess)
+    active_letters <- guess_letters[feedback %in% c("green", "yellow")]
+    for (i in 1:5) {
+      if (feedback[i] == "grey" && !(guess_letters[i] %in% active_letters)) {
+        valid_letters <- valid_letters[valid_letters != guess_letters[i]]
+      }
+    }
+    
+    yellow_letters <- guess_letters[feedback == "yellow"]
+    
+    # 3. Filter remaining_words for the next turn
+    next_remaining <- c()
+    
+    for (word in remaining_words) {
+      # Don't re-guess the exact word we just tried
+      if (word == current_guess) next
+      
+      candidate_letters <- str_split(word, pattern = "")[[1]]
+      
+      # Rule A: Only valid (non-grey) letters
+      uses_valid_letters <- all(candidate_letters %in% valid_letters)
+      
+      # Rule B: Includes all discovered yellow letters
+      includes_yellows <- all(yellow_letters %in% candidate_letters)
+      
+      # Rule C: Yellow letters cannot be in the same spot
+      yellow_spot_clash <- FALSE
+      for (i in 1:5) {
+        if (feedback[i] == "yellow" && candidate_letters[i] == guess_letters[i]) {
+          yellow_spot_clash <- TRUE
+          break
+        }
+      }
+      
+      # Rule D: Green letters stay locked in place
+      green_spot_mismatch <- FALSE
+      for (i in 1:5) {
+        if (feedback[i] == "green" && candidate_letters[i] != guess_letters[i]) {
+          green_spot_mismatch <- TRUE
+          break
+        }
+      }
+      
+      if (uses_valid_letters && includes_yellows && !yellow_spot_clash && !green_spot_mismatch) {
+        next_remaining <- c(next_remaining, word)
+      }
+    }
+    
+    remaining_words <- next_remaining
+    
+    # Safety check in case no valid words remain
+    if (length(remaining_words) == 0) break
+    
+    # 4. Pick the next guess (handle single-element vector safely in sample())
+    if (length(remaining_words) == 1) {
+      current_guess <- remaining_words[1]
+    } else {
+      current_guess <- sample(remaining_words, 1)
+    }
+  }
+  
+  if (verbose) cat("Failed to solve within", max_guesses, "guesses.\n")
+  
+  return(list(
+    target = target_word,
+    solved = FALSE,
+    num_guesses = NA,
+    guesses = guess_history
+  ))
+}
+
+
+
+nsmims <- 1000
+(sum(replicate(nsim, simulate_wordle(words = words, verbose = FALSE))) / nsim)
+```
+
+
+
+
+
+
+
+# old code
+
+```{r}
+answer <- str_split(random[1], pattern="")[[1]] #answer
+answer
+guess <- str_split(random[2], pattern="")[[1]] #first guess
+guess
+
+alphabet <- letters
+  
+for (i in 1:5) {
+  # check and place green
+  if (guess[i] == answer[i]){
+    reveal[i] = "green" 
+  } else if (guess[i] %in% answer & guess[i] != answer[i]) {
+    reveal[i] = "yellow"
+  } else {
+    reveal[i] = "grey"
+  }
+}
+
+reveal
+#guess[[1]][1]
+
+#remove invalid letters from alphabet 
+
+for (i in 1:length(reveal)){
+  if (reveal[i] == "grey"){
+    alphabet <- alphabet[alphabet != guess[[1]][i]]
+  }
+}
+length(alphabet)
+
+# remove words that include these letters (keep words that only include letters in the new alphabet)
+
+possible_words <- c()
+
+for (i in 1:length(words)){
+  word_letters <- str_split(as.character(words[i]), "")[[1]]
+
+  if (all(word_letters %in% alphabet)) {
+    possible_words <- c(possible_words, words[i])
+  }
+}
+
+word_letters[1:10]
+str_split(as.character(words[1]), pattern = "")
+
+guess2 <- sample(possible_words, 1) #second guess
+guess2
+```
