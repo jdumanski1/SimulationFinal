@@ -378,8 +378,9 @@ nsmims <- 1000
 (sum(replicate(nsim, simulate_wordle(words = words))) / nsim)
 ```
 
-
 ## simulate of game
+
+Forcing you to play in hard mode
 
 ```{r}
 simulate_wordle <- function(words, target_word = NULL, first_guess = NULL, max_guesses = 6, verbose = TRUE) {
@@ -507,15 +508,48 @@ simulate_wordle <- function(words, target_word = NULL, first_guess = NULL, max_g
 
 
 
-nsmims <- 1000
-(sum(replicate(nsim, simulate_wordle(words = words, verbose = FALSE))) / nsim)
+#nsmims <- 1000
+#(sum(replicate(nsim, simulate_wordle(words = words, verbose = FALSE))) / nsim)
+#Simulation Test
+# Number of games to simulate
+num_simulations <- 100
+
+# Run the simulation with verbose = FALSE
+sim_results <- replicate(
+  n = num_simulations, 
+  expr = simulate_wordle(words, verbose = FALSE), 
+  simplify = FALSE
+)
+
+# Extract the TRUE/FALSE solved status from each game
+solved_vector <- sapply(sim_results, function(game) game$solved)
+
+# Calculate the percentage of games won
+win_percentage <- mean(solved_vector) * 100
+
+# Print the result
+cat("Win Percentage:", round(win_percentage, 2), "%\n")
 ```
 
+Some ways to switch it up:\
 
+- 4 letter vs 5 letter vs 6 letter
 
+- graphs which show distribution of wins
 
+- change starting word
 
+  - Can't start with a double letter word
 
+  - How do your odds get better/worse
+
+- Heat map
+
+  - x-axis: letters guess
+
+  - y-guesses
+
+  - for example far upper left is percentage of how often you get the first letter correct in first guess. Lower right is how often you get the last letter by your last guess
 
 # old code
 
